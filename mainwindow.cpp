@@ -39,13 +39,14 @@ void MainWindow::initGraphic() {
     m_timer.start();
 
     series_RMS = new QSplineSeries(this);
-    scatter_RMS = new QScatterSeries(this);
     series_RMS->setName(" RMS ");
+
+    scatter_RMS = new QScatterSeries(this);
     scatter_RMS->setName(" scatter_RMS ");
     scatter_RMS->setMarkerShape(QScatterSeries::MarkerShapeCircle);//圆形的点
     scatter_RMS->setBrush(QColor(255, 255, 255)); //离散点边框颜色
-//    scatter_RMS->setBrush(QBrush(QColor(21, 100, 255)));//离散点背景色
     scatter_RMS->setMarkerSize(5); //离散点大小
+
     series_set = new QLineSeries(this);
     series_set->setName("设定位置");
     series_actual = new QLineSeries(this);
@@ -240,6 +241,7 @@ void MainWindow::handleTimeout() {
     for (int i = 0; i < len + 1; i++) {
         series_RMS->replace(i, i, dataList.at(i));
         scatter_RMS->replace(i, i, dataList.at(i));
+
         series_set->replace(i, i, dataList.at(i) + 1);
         series_actual->replace(i, i, dataList.at(i) - 1);
         if (dataList.at(i) - 1 >= 0) {
@@ -323,101 +325,37 @@ void MainWindow::legendMarkerClicked() {
     m_callouts.clear();
 
     QLegendMarker* marker = qobject_cast<QLegendMarker*> (sender());
-
-    switch (marker->type()) {
-    case QLegendMarker::LegendMarkerTypeXY: {
-//        chart->legend()->markers(scatter_RMS)[0]->setVisible(false);
-        if (marker == chart->legend()->markers(series_RMS)[0]) {
-            if (!scatter_RMS->isVisible()) {
-                scatter_RMS->setVisible(true);
-                chart->legend()->markers(scatter_RMS)[0]->setVisible(false);
-            } else
-                scatter_RMS->setVisible(false);
-        }
-        marker->series()->setVisible(!marker->series()->isVisible());
-        marker->setVisible(true);
-        qreal alpha = 1.0;
-        if (!marker->series()->isVisible())
-            alpha = 0.5;
-
-        QColor color;
-        QBrush brush = marker->labelBrush();
-        color = brush.color();
-        color.setAlphaF(alpha);
-        brush.setColor(color);
-        marker->setLabelBrush(brush);
-
-        brush = marker->brush();
-        color = brush.color();
-        color.setAlphaF(alpha);
-        brush.setColor(color);
-        marker->setBrush(brush);
-
-        QPen pen = marker->pen();
-        color = pen.color();
-        color.setAlphaF(alpha);
-        pen.setColor(color);
-        marker->setPen(pen);
-        break;
+    if (marker == chart->legend()->markers(series_RMS)[0]) {
+        if (!scatter_RMS->isVisible()) {
+            scatter_RMS->setVisible(true);
+            chart->legend()->markers(scatter_RMS)[0]->setVisible(false);
+        } else
+            scatter_RMS->setVisible(false);
     }
-    case QLegendMarker::LegendMarkerTypeArea: {
-        marker->series()->setVisible(!marker->series()->isVisible());
-        marker->setVisible(true);
-        qreal alpha = 1.0;
-        if (!marker->series()->isVisible())
-            alpha = 0.5;
+    marker->series()->setVisible(!marker->series()->isVisible());
+    marker->setVisible(true);
+    qreal alpha = 1.0;
+    if (!marker->series()->isVisible())
+        alpha = 0.5;
 
-        QColor color;
-        QBrush brush = marker->labelBrush();
-        color = brush.color();
-        color.setAlphaF(alpha);
-        brush.setColor(color);
-        marker->setLabelBrush(brush);
+    QColor color;
+    QBrush brush = marker->labelBrush();
+    color = brush.color();
+    color.setAlphaF(alpha);
+    brush.setColor(color);
+    marker->setLabelBrush(brush);
 
-        brush = marker->brush();
-        color = brush.color();
-        color.setAlphaF(alpha);
-        brush.setColor(color);
-        marker->setBrush(brush);
+    brush = marker->brush();
+    color = brush.color();
+    color.setAlphaF(alpha);
+    brush.setColor(color);
+    marker->setBrush(brush);
 
-        QPen pen = marker->pen();
-        color = pen.color();
-        color.setAlphaF(alpha);
-        pen.setColor(color);
-        marker->setPen(pen);
-        break;
-    }
-    case QLegendMarker::LegendMarkerTypeBar: {
-        marker->series()->setVisible(!marker->series()->isVisible());
-        marker->setVisible(true);
-        qreal alpha = 1.0;
-        if (!marker->series()->isVisible())
-            alpha = 0.5;
-
-        QColor color;
-        QBrush brush = marker->labelBrush();
-        color = brush.color();
-        color.setAlphaF(alpha);
-        brush.setColor(color);
-        marker->setLabelBrush(brush);
-
-        brush = marker->brush();
-        color = brush.color();
-        color.setAlphaF(alpha);
-        brush.setColor(color);
-        marker->setBrush(brush);
-
-        QPen pen = marker->pen();
-        color = pen.color();
-        color.setAlphaF(alpha);
-        pen.setColor(color);
-        marker->setPen(pen);
-        break;
-    }
-
-    default:
-        break;
-    }
+    QPen pen = marker->pen();
+    color = pen.color();
+    color.setAlphaF(alpha);
+    pen.setColor(color);
+    marker->setPen(pen);
 }
 
 
