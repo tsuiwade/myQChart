@@ -18,10 +18,24 @@
 
 以及鼠标hover在scatter点上的显示反应。
 
+![img](https://images-1312692717.cos.ap-nanjing.myqcloud.com/img/image-20220408194524894.png)
 
 
-![image-20220408194524894](https://gitee.com/tsuiwade/images/raw/master/img/image-20220408194524894.png)
 
 
 
 接下来还需要做协议的解析、动态调整y轴的范围、计算error值。计算rms值。
+
+经过修改为20220628
+
+![image-20220628144712882](https://images-1312692717.cos.ap-nanjing.myqcloud.com/img/image-20220628144712882.png)
+
+最终经过调试完善项目界面如上图所示。
+
+还添加了双轴双图显示、关掉界面再打开的文本框数据缓存功能、文本框重要数据的实时显示、qt chart的每隔一段时间更新画图、保存为csv文件的保存功能、status状态栏的qt组件控制、拖动条设置图像更新频率等功能。
+
+源码已上传至github上。
+
+---
+
+该代码前期耗费两周研究qt chart的诸多显示效果，结合项目实际意义设计最佳画图方案。后期结合望远镜实时数据，添加诸多功能。
