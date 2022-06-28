@@ -1,0 +1,184 @@
+﻿#include "udpthread.h"
+#include <QDebug>
+#include <QtNetwork>
+#include <QThread>
+
+#include <windows.h>
+int udpThread::count = 1;
+bool udpThread::draw_flag = true;
+int udpThread::counti = 0;
+bool udpThread::AZEnable = 0;
+bool udpThread::HEnable = 0;
+bool udpThread::AZFault = 0;
+bool udpThread::HFault = 0;
+bool udpThread::AZForLmt = 0;
+bool udpThread::AZRevLmt = 0;
+bool udpThread::HForLmt = 0;
+bool udpThread::HRevLmt = 0;
+bool udpThread::AZSoftForLmt = 0;
+bool udpThread::AZSoftRevLmt = 0;
+bool udpThread::HSoftForLmt = 0;
+bool udpThread::HSoftRevLmt = 0;
+int udpThread::CurrAZCount = 0; // 实际位置 count
+int udpThread::CurrHCount = 0;
+double udpThread::TargetAZ = 0; // 理论位置 / 角秒
+double udpThread::TargetH = 0;
+int udpThread::speed_H = 0;
+int udpThread::speed_AZ = 0;
+double udpThread::ErrAZ = 0;
+double udpThread::ErrH = 0;
+double udpThread::RMSH = 0;
+int udpThread::datatime = 0;
+int udpThread::datatimems = 0;
+bool udpThread::Sendready = 0;
+
+QList<double> udpThread::ErrAZList = QList<double>();
+QList<double> udpThread::ErrHList = QList<double>();
+QList<int> udpThread::TargetAZList = QList<int>();
+QList<int> udpThread::TargetHList = QList<int>();
+QList<double> udpThread::CurrAZList = QList<double>();
+QList<double> udpThread::CurrHList = QList<double>();
+QList<double> udpThread::RMSHList = QList<double>();
+QList<double> udpThread::RMSAZList = QList<double>();
+
+unsigned int BLEndianUint32(unsigned int value) {
+    return ((value & 0x000000FF) << 24) |  ((value & 0x0000FF00) << 8) |  ((value & 0x00FF0000) >> 8) | ((value & 0xFF000000) >> 24);
+}
+
+udpThread::udpThread(QObject *parent) : QObject(parent) {
+
+    qDebug() << " kaishi ";
+    while( udpThread::ErrAZList.size() < 21 ) udpThread::ErrAZList.append(0.0);
+    while( udpThread::ErrHList.size() < 21 ) udpThread::ErrHList.append(0);
+    while( udpThread::RMSHList.size() < 21 ) udpThread::RMSHList.append(0.0);
+    while( udpThread::RMSAZList.size() < 21 ) udpThread::RMSAZList.append(0.0);
+    while( udpThread::TargetHList.size() < 21 ) udpThread::TargetHList.append(0);
+    while( udpThread::CurrHList.size() < 21 ) udpThread::CurrHList.append(0);
+    qDebug() << " end " << udpThread::ErrAZList.size();
+}
+
+void udpThread::run() {
+
+    udpsocket = new QUdpSocket();
+
+    if (udpsocket->bind(QHostAddress("192.168.3.126"), 2019)) // 192.168.3.14 : 2020
+//    if (udpsocket->bind(QHostAddress("127.0.0.1"), 2019))
+        qDebug() << " bind 成功 " + QString::number(udpsocket->localPort());
+    else
+        qDebug() << " bind 失败 ";
+    //    qDebug() << "udpthread run:" << QThread::currentThread();
+    connect(udpsocket, &QUdpSocket::readyRead, this, &udpThread::readfun,
+            Qt::DirectConnection);
+}
+void udpThread::writefun(QByteArray ba) {
+    udpsocket->writeDatagram(ba, QHostAddress("192.168.3.14"), 2020);
+//    udpsocket->writeDatagram(ba, QHostAddress("127.0.0.1"), 2020);
+//    qDebug() << "udpthread write:" << QThread::currentThread() << "DATA" << QString(ba.toHex(' '));
+}
+
+
+void udpThread::readfun() {
+
+    while (udpsocket->hasPendingDatagrams()) {
+        counti++;
+        QByteArray data;
+        data.resize(udpsocket->pendingDatagramSize());
+        udpsocket->readDatagram(data.data(), data.size());
+        qDebug() << data.size() ;
+        if (data.size() <= 0)
+            return;
+
+        char *udpdata = data.data();
+        char AZState, HState;
+        if (udpdata[0] == 'S' && data.size() == 53 && udpdata[52] == 'W') {
+            qDebug() << "udpthread read:" << QString(data.toHex(' '));
+
+            AZState = udpdata[2];
+            HState = udpdata[3];
+            AZEnable = (int(AZState & 0x01) == 1 ? 1 : 0);
+            HEnable = (int(HState & 0x01) == 1 ? 1 : 0);
+
+            int iTargetAZ, iTargetH, iErrAZ, iErrH;
+            memcpy(&CurrAZCount, udpdata + 6, 4); // 实际位置
+            memcpy(&CurrHCount, udpdata + 10, 4);
+            CurrHCount = BLEndianUint32(CurrHCount);
+            CurrAZCount = BLEndianUint32(CurrAZCount);
+            CurrH = CurrHCount / 10.0;
+
+            memcpy(&iTargetAZ, udpdata + 14, 4); // 理论位置
+            memcpy(&iTargetH, udpdata + 18, 4);
+            iTargetAZ = BLEndianUint32(iTargetAZ);
+            iTargetH = BLEndianUint32(iTargetH);
+            TargetAZ = iTargetAZ / 10.0;
+            TargetH = iTargetH / 10.0;
+
+            memcpy(&iErrAZ, udpdata + 22, 4); // 误差
+            memcpy(&iErrH, udpdata + 26, 4);
+            iErrH = BLEndianUint32(iErrH);
+            iErrAZ = BLEndianUint32(iErrAZ);
+            ErrAZ = iErrAZ / 10.0;
+            ErrH = iErrH / 10.0;
+
+            memcpy(&speed_AZ, udpdata + 30, 4); // 速度
+            memcpy(&speed_H, udpdata + 34, 4);
+            speed_AZ = BLEndianUint32(speed_AZ);
+            speed_H = BLEndianUint32(speed_H);
+
+            double sumH2 = 0;
+            for (int i = 0; i < ErrHList.size(); i++) {
+                sumH2 += ErrHList.at(i) * ErrHList.at(i);
+            }
+            RMSH = qSqrt(sumH2 / ErrHList.size());
+            qDebug() << " RMSH " << RMSH;
+
+
+            memcpy(&datatime, udpdata + 39, 4);
+            memcpy(&datatimems, udpdata + 43, 2);
+            datatime = BLEndianUint32(datatime);
+            if ( draw_flag && counti >= count ) {
+                counti = 0;
+                CurrAZList << CurrAZ;
+                TargetAZList << TargetAZ;
+                if (CurrAZList.size() > 21) {
+                    CurrAZList.removeFirst();
+                    TargetAZList.removeFirst();
+                }
+                CurrHList << CurrH;
+                TargetHList << TargetH;
+                if (CurrHList.size() > 21) {
+                    CurrHList.removeFirst();
+                    TargetHList.removeFirst();
+                }
+
+
+                ErrHList << ErrH;
+                if (ErrHList.size() > 21) {
+                    ErrHList.removeFirst();
+                }
+                RMSHList << RMSH;
+
+                if (RMSHList.size() > 20)
+                    RMSHList.removeFirst();
+
+//                double sumH2 = 0;
+//                for (int i = 0; i < ErrHList.size(); i++) {
+//                    sumH2 += ErrHList.at(i) * ErrHList.at(i);
+//                }
+//                RMSH = qSqrt(sumH2 / ErrHList.size());
+//                RMSHList << RMSH;
+//                if (udpThread::RMSHList.size() > 100)
+//                    udpThread::RMSHList.removeFirst();
+                emit graphDataReady();
+            }
+
+            emit dataready();
+        }
+    }
+}
+
+void udpThread::closeudp() {
+    udpsocket->close();
+    delete udpsocket;
+    qDebug() << "udpthread close:" << QThread::currentThread();
+}
+
