@@ -2,8 +2,11 @@
 #include <QDebug>
 #include <QtNetwork>
 #include <QThread>
-
 #include <windows.h>
+
+static int POINT_NUM = 51;
+static int RMS_NUM = 100;
+
 int udpThread::count = 1;
 double udpThread::sumH2 = 0;
 double udpThread::sumAZ2 = 0;
@@ -34,7 +37,7 @@ QList<double> udpThread::CurrHList = QList<double>();
 QList<double> udpThread::RMSHList = QList<double>();
 QList<double> udpThread::RMSAZList = QList<double>();
 
-unsigned int BLEndianUint32(unsigned int value) {
+static unsigned int BLEndianUint32(unsigned int value) {
     return ((value & 0x000000FF) << 24) |  ((value & 0x0000FF00) << 8) |  ((value & 0x00FF0000) >> 8) | ((value & 0xFF000000) >> 24);
 }
 
@@ -52,16 +55,16 @@ void udpThread::listClear() {
     TargetAZList.clear();
     CurrHList.clear();
     CurrAZList.clear();
-    while( CErrAZList.size() < 21 ) CErrAZList.append(0.0);
-    while( CErrHList.size() < 21 ) CErrHList.append(0.0);
-    while( udpThread::ErrAZList.size() < 21 ) udpThread::ErrAZList.append(0.0);
-    while( udpThread::ErrHList.size() < 21 ) udpThread::ErrHList.append(0);
-    while( udpThread::RMSHList.size() < 21 ) udpThread::RMSHList.append(0.0);
-    while( udpThread::RMSAZList.size() < 21 ) udpThread::RMSAZList.append(0.0);
-    while( udpThread::TargetHList.size() < 21 ) udpThread::TargetHList.append(0);
-    while( udpThread::TargetAZList.size() < 21 ) udpThread::TargetAZList.append(0);
-    while( udpThread::CurrHList.size() < 21 ) udpThread::CurrHList.append(0);
-    while( udpThread::CurrAZList.size() < 21 ) udpThread::CurrAZList.append(0);
+    while( CErrAZList.size() < POINT_NUM ) CErrAZList.append(0.0);
+    while( CErrHList.size() < POINT_NUM ) CErrHList.append(0.0);
+    while( udpThread::ErrAZList.size() < POINT_NUM ) udpThread::ErrAZList.append(0.0);
+    while( udpThread::ErrHList.size() < POINT_NUM ) udpThread::ErrHList.append(0);
+    while( udpThread::RMSHList.size() < POINT_NUM ) udpThread::RMSHList.append(0.0);
+    while( udpThread::RMSAZList.size() < POINT_NUM ) udpThread::RMSAZList.append(0.0);
+    while( udpThread::TargetHList.size() < POINT_NUM ) udpThread::TargetHList.append(0);
+    while( udpThread::TargetAZList.size() < POINT_NUM ) udpThread::TargetAZList.append(0);
+    while( udpThread::CurrHList.size() < POINT_NUM ) udpThread::CurrHList.append(0);
+    while( udpThread::CurrAZList.size() < POINT_NUM ) udpThread::CurrAZList.append(0);
 
 }
 
@@ -134,7 +137,7 @@ void udpThread::readfun() {
 
             CErrAZList << ErrAZ;
             sumAZ2 += ErrAZ * ErrAZ;
-            if (CErrAZList.size() > 100) {
+            if (CErrAZList.size() > RMS_NUM) {
                 sumAZ2 -= CErrAZList[0] * CErrAZList[0];
                 CErrAZList.removeFirst();
             }
@@ -169,31 +172,31 @@ void udpThread::readfun() {
 
                 CurrAZList << CurrAZ;
                 TargetAZList << TargetAZ;
-                if (CurrAZList.size() > 21) {
+                if (CurrAZList.size() > POINT_NUM) {
                     CurrAZList.removeFirst();
                     TargetAZList.removeFirst();
                 }
                 CurrHList << CurrH;
                 TargetHList << TargetH;
-                if (CurrHList.size() > 21) {
+                if (CurrHList.size() > POINT_NUM) {
                     CurrHList.removeFirst();
                     TargetHList.removeFirst();
                 }
 
                 ErrHList << ErrH;
-                if (ErrHList.size() > 21) {
+                if (ErrHList.size() > POINT_NUM) {
                     ErrHList.removeFirst();
                 }
                 ErrAZList << ErrAZ;
-                if (ErrAZList.size() > 21) {
+                if (ErrAZList.size() > POINT_NUM) {
                     ErrAZList.removeFirst();
                 }
 
                 RMSHList << RMSH;
-                if (RMSHList.size() > 21)
+                if (RMSHList.size() > POINT_NUM)
                     RMSHList.removeFirst();
                 RMSAZList << RMSAZ;
-                if (RMSAZList.size() > 21)
+                if (RMSAZList.size() > POINT_NUM)
                     RMSAZList.removeFirst();
 
                 emit graphDataReady();

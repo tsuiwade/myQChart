@@ -41,8 +41,8 @@ class MainWindow : public QMainWindow {
     udpThread *MyUdp;
     QFile file;
     bool bsave;
-    int len = 20;
-    QList<float> dataList;
+
+    QList<int> dataList;
     QChart* chart = nullptr;
     QChart* chart_AZ = nullptr;
     void initGraphic_H();
@@ -100,6 +100,7 @@ class MainWindow : public QMainWindow {
   public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
 
   private slots:
 //自定义槽函数

@@ -10,7 +10,10 @@
 #include <QtCore/QRandomGenerator>
 #include <QtCore/QDebug>
 
-unsigned int BLEndianUint321(unsigned int value) {
+int  TickCount = 20;
+int POINT_NUM = 50;
+
+unsigned int BLEndianUint32(unsigned int value) {
     return ((value & 0x000000FF) << 24) | ((value & 0x0000FF00) << 8) |
            ((value & 0x00FF0000) >> 8) | ((value & 0xFF000000) >> 24);
 }
@@ -24,7 +27,7 @@ void MainWindow::initGraphic_AZ() {
     m_axisY_blue_AZ = new QValueAxis();
     m_axisY_white_AZ = new QValueAxis();
     m_axisY_green_AZ = new QValueAxis();
-    m_axisX_AZ->setTickCount(len + 1);
+    m_axisX_AZ->setTickCount(TickCount);
     m_axisX_AZ->setLabelFormat("%d");
 
     m_axisY_red_AZ->setLabelsColor(QColor(255, 0, 0, 220));
@@ -48,7 +51,7 @@ void MainWindow::initGraphic_AZ() {
     scatter_RMS_AZ->setName(" scatter_RMS_AZ ");
     scatter_RMS_AZ->setMarkerShape(QScatterSeries::MarkerShapeCircle); //圆形的点
     scatter_RMS_AZ->setBrush(QColor(255, 255, 255)); //离散点边框颜色
-    scatter_RMS_AZ->setMarkerSize(5);                //离散点大小
+    scatter_RMS_AZ->setMarkerSize(2);                //离散点大小
 
     series_set_AZ = new QLineSeries(this);
     series_set_AZ->setName("设定位置/角秒");
@@ -110,21 +113,15 @@ void MainWindow::initGraphic_AZ() {
     m_axisY_green_AZ->setLabelsFont(font);
 
     //    初始化data
-    for (int i = 0; i < len + 1; i++) {
-        dataList.append(0);
-    }
+
+    dataList = udpThread::TargetAZList;
     for (int i = 0; i < dataList.length(); i++) {
         series_RMS_AZ->append(i, dataList.at(i));
         scatter_RMS_AZ->append(i, dataList.at(i));
         series_set_AZ->append(i, dataList.at(i));
         series_actual_AZ->append(i, dataList.at(i));
-        if (dataList[i] >= 0) {
-            error_plus_AZ->append(dataList[i]);
-            error_minus_AZ->append(0);
-        } else {
-            error_minus_AZ->append(dataList[i]);
-            error_plus_AZ->append(0);
-        }
+        error_plus_AZ->append(0);
+        error_minus_AZ->append(0);
         series_AZ->append(error_plus_AZ);
         series_AZ->append(error_minus_AZ);
     }
@@ -155,7 +152,7 @@ void MainWindow::initGraphic_AZ() {
     areaSeries_AZ->attachAxis(m_axisX_AZ);
     areaSeries_AZ->attachAxis(m_axisY_blue_AZ);
 
-    m_axisX_AZ->setRange(0, len);
+    m_axisX_AZ->setRange(0, POINT_NUM);
     m_axisY_white_AZ->setRange(-5, 10);
     m_axisY_red_AZ->setRange(-5, 10);
     m_axisY_green_AZ->setRange(-5, 10);
@@ -181,7 +178,7 @@ void MainWindow::initGraphic_H() {
     m_axisY_blue_H = new QValueAxis();
     m_axisY_white_H = new QValueAxis();
     m_axisY_green_H = new QValueAxis();
-    m_axisX_H->setTickCount(len + 1);
+    m_axisX_H->setTickCount(TickCount);
     m_axisX_H->setLabelFormat("%d");
 
     m_axisY_red_H->setLabelsColor(QColor(255, 0, 0, 220));
@@ -205,7 +202,7 @@ void MainWindow::initGraphic_H() {
     scatter_RMS_H->setName(" scatter_RMS_H ");
     scatter_RMS_H->setMarkerShape(QScatterSeries::MarkerShapeCircle); //圆形的点
     scatter_RMS_H->setBrush(QColor(255, 255, 255)); //离散点边框颜色
-    scatter_RMS_H->setMarkerSize(5);                //离散点大小
+    scatter_RMS_H->setMarkerSize(2);                //离散点大小
 
     series_set_H = new QLineSeries(this);
     series_set_H->setName("设定位置/角秒");
@@ -271,21 +268,14 @@ void MainWindow::initGraphic_H() {
     m_axisY_green_H->setLabelsFont(font);
 
     //    初始化data
-    for (int i = 0; i < len + 1; i++) {
-        dataList.append(0);
-    }
+    dataList = udpThread::TargetAZList;
     for (int i = 0; i < dataList.length(); i++) {
         series_RMS_H->append(i, dataList.at(i));
         scatter_RMS_H->append(i, dataList.at(i));
         series_set_H->append(i, dataList.at(i));
         series_actual_H->append(i, dataList.at(i));
-        if (dataList[i] >= 0) {
-            error_plus_H->append(dataList[i]);
-            error_minus_H->append(0);
-        } else {
-            error_minus_H->append(dataList[i]);
-            error_plus_H->append(0);
-        }
+        error_plus_H->append(0);
+        error_minus_H->append(0);
         series_H->append(error_plus_H);
         series_H->append(error_minus_H);
     }
@@ -316,7 +306,7 @@ void MainWindow::initGraphic_H() {
     areaSeries_H->attachAxis(m_axisX_H);
     areaSeries_H->attachAxis(m_axisY_blue_H);
 
-    m_axisX_H->setRange(0, len);
+    m_axisX_H->setRange(0, POINT_NUM);
     m_axisY_white_H->setRange(-5, 10);
     m_axisY_red_H->setRange(-5, 10);
     m_axisY_green_H->setRange(-5, 10);
@@ -367,10 +357,10 @@ MainWindow::MainWindow(QWidget *parent)
     bsave = 0;
     chart = new QChart();
     chart_AZ = new QChart();
+    MyUdp = new udpThread;
     initGraphic_H();
     initGraphic_AZ();
 
-    MyUdp = new udpThread;
 
     threadUdp = new QThread(this);
     MyUdp->moveToThread(threadUdp);
@@ -768,7 +758,7 @@ void MainWindow::on_move_H_clicked() {
     ba[1] = 'M';
     ba[2] = 'G';
     int value = ui->lineEdit_speed_H->text().toInt();
-    value = BLEndianUint321(value);
+    value = BLEndianUint32(value);
     memcpy(ba.data() + 3, &value, 4);
     emit udpsend(ba);
 }
@@ -779,7 +769,7 @@ void MainWindow::on_move_AZ_clicked() {
     ba[1] = 'M';
     ba[2] = 'F';
     int value = ui->lineEdit_speed_AZ->text().toInt();
-    value = BLEndianUint321(value);
+    value = BLEndianUint32(value);
     memcpy(ba.data() + 7, &value, 4);
     emit udpsend(ba);
 }
@@ -791,9 +781,9 @@ void MainWindow::on_move_ALL_clicked() {
     ba[2] = 'A';
     int value1 = ui->lineEdit_speed_AZ->text().toInt();
     int value2 = ui->lineEdit_speed_H->text().toInt();
-    value1 = BLEndianUint321(value1);
+    value1 = BLEndianUint32(value1);
     memcpy(ba.data() + 7, &value1, 4);
-    value2 = BLEndianUint321(value2);
+    value2 = BLEndianUint32(value2);
     memcpy(ba.data() + 3, &value2, 4);
     emit udpsend(ba);
 }
